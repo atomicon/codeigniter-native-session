@@ -11,4 +11,8 @@ Installation
 
 Done. 
 
-The class mimics the Codeigniter's CI_Session class so all functions you are used to are available.
+The class mimics the Codeigniter's CI_Session class.
+
+All functions (set_userdata / userdata / flashdata / set_flashdata / etc ... ) are available.
+
+I've been using this class because it's a lot safer than the cookie-sessions of codeigniter.
