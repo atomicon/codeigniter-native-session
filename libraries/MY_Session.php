@@ -14,7 +14,7 @@ Example config file: session.php
 
 <?php
 
-//The session name (leave empty for cross application sessions) 
+//The session name (leave empty for cross application sessions)
 $config['sess_name']       = '';
 
 //Time to expire a session AND/OR regenerate the session id
@@ -31,20 +31,20 @@ $config['sess_flash_key']  = 'flash';
 */
 
 
-class MY_Session 
-{		
+class MY_Session
+{
 	function __construct()
-	{		
-		log_message('debug', "Native_session Class Initialized");
+	{
+		log_message('debug', "MY_Session Class Initialized");
         get_instance()->load->config('session', FALSE, TRUE);
 		$this->_sess_run();
 	}
-    
+
     function data()
     {
         return $_SESSION;
     }
-        
+
 	/**
     * Regenerates session id
     */
@@ -65,16 +65,16 @@ class MY_Session
         }
 
 		// switch back to the new session id and send the cookie
-        
+
         if ($new_session_id)
         {
-            session_id($new_session_id);        
+            session_id($new_session_id);
             session_start();
 
             // restore the old session data into the new session
             $_SESSION = $old_session_data;
         }
-				
+
 		// end the current session and store session data.
 		session_write_close();
 	}
@@ -99,7 +99,6 @@ class MY_Session
 
 	function sess_destroy()
 	{
-		$_SESSION = array();
 		$this->destroy();
 	}
 
@@ -171,14 +170,18 @@ class MY_Session
 		if (session_id()=='')
 		{
 			session_start();
-		}		
+		}
 
 		// check if session id needs regeneration
 		if ( $this->_session_id_expired() )
 		{
 			// regenerate session id (session data stays the
 			// same, but old session storage is destroyed)
-			$this->regenerate_id();
+			if (config_item('sess_regenerate'))
+			{
+				$this->regenerate_id();
+				return;
+			}
 		}
 
 		// delete old flashdata (from last request)
@@ -195,35 +198,37 @@ class MY_Session
 	{
         $sess_expiration = config_item('sess_expiration');
         if (is_numeric($sess_expiration) && $sess_expiration > 0)
-		{    
-            if (isset($_SESSION['_sess:last-activation']))
-            {
-                $expiry_time = $_SESSION['_sess:last-activation'] + $sess_expiration;
-                if (time() > $expiry_time)
-                {
-                    $this->destroy();
-                    return true;                    
-                }                
-            }            
-            $_SESSION['_sess:last-activation'] = time();
-            
+		{
             if (config_item('sess_regenerate'))
-            {            
+            {
                 if ( !isset($_SESSION['_sess:last-generated']) )
                 {
                     $_SESSION['_sess:last-generated'] = time();
                     return false;
                 }
                 else
-                {		
+                {
                     $expiry_time = $_SESSION['_sess:last-generated'] + $sess_expiration;
                     if (time() >= $expiry_time)
-                    {                        
+                    {
                         return true;
                     }
                 }
             }
-        }        
+            else
+            {
+            	if (isset($_SESSION['_sess:last-activation']))
+	            {
+	                $expiry_time = $_SESSION['_sess:last-activation'] + $sess_expiration;
+	                if (time() >= $expiry_time)
+	                {
+	                    $this->destroy();
+	                    return true;
+	                }
+	            }
+	            $_SESSION['_sess:last-activation'] = time();
+            }
+        }
 		return false;
 	}
 
